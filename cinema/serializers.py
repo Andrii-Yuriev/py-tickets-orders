@@ -198,11 +198,10 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                 ticket_data["seat"]
             )
             if ticket_identifier in seen_tickets:
-                message = (
-                    f"Duplicate ticket for session "
-                    f"{ticket_data["movie_session"].id}, "
-                    f"row {ticket_data["row"]}, "
-                    f"seat {ticket_data["seat"]} in this order."
+                message = "Ticket for session {}, row {}, seat {} is already taken.".format(
+                    ticket_data['movie_session'].id,
+                    ticket_data['row'],
+                    ticket_data['seat']
                 )
                 raise serializers.ValidationError({"tickets": message})
             seen_tickets.add(ticket_identifier)
@@ -216,11 +215,10 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                 try:
                     Ticket.objects.create(order=order, **ticket_data)
                 except IntegrityError:
-                    message = (
-                        f"Ticket for session "
-                        f"{ticket_data["movie_session"].id}, "
-                        f"row {ticket_data["row"]}, "
-                        f"seat {ticket_data["seat"]} is already taken."
+                    message = "Ticket for session {}, row {}, seat {} is already taken.".format(
+                        ticket_data['movie_session'].id,
+                        ticket_data['row'],
+                        ticket_data['seat']
                     )
                     raise serializers.ValidationError({"tickets": message})
             return order
