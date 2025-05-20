@@ -1,3 +1,4 @@
+# cinema/serializers.py
 from django.db import (
     IntegrityError,
     transaction,
@@ -111,18 +112,18 @@ class TicketCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {
                     "row": (
-                        f"Row number must be in available range: "
-                        f"[1, {cinema_hall.rows}]"
-                    )
+                        "Row number must be in available range: "
+                        "[1, {}]"
+                    ).format(cinema_hall.rows)
                 }
             )
         if not (1 <= seat <= cinema_hall.seats_in_row):
             raise serializers.ValidationError(
                 {
                     "seat": (
-                        f"Seat number must be in available range: "
-                        f"[1, {cinema_hall.seats_in_row}]"
-                    )
+                        "Seat number must be in available range: "
+                        "[1, {}]"
+                    ).format(cinema_hall.seats_in_row)
                 }
             )
         return attrs
@@ -173,7 +174,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ("id", "tickets", "created_at")
-        read_only_fields = ("created_at",)
+        read_only_fields = ("id", "created_at",)
 
     def validate_tickets(self, tickets_data: list[dict]) -> list[dict]:
         if not tickets_data:
@@ -188,8 +189,10 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                 ticket_data["seat"]
             )
             if ticket_identifier in seen_tickets:
-                message = ("Ticket for session {}, "
-                           "row {}, seat {} is already taken.").format(
+                message = (
+                    "Duplicate ticket for session {}, "
+                    "row {}, seat {} in this order."
+                ).format(
                     ticket_data["movie_session"].id,
                     ticket_data["row"],
                     ticket_data["seat"]
@@ -206,8 +209,10 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                 try:
                     Ticket.objects.create(order=order, **ticket_data)
                 except IntegrityError:
-                    message = ("Ticket for session {}, "
-                               "row {}, seat {} is already taken.").format(
+                    message = (
+                        "Ticket for session {}, "
+                        "row {}, seat {} is already taken."
+                    ).format(
                         ticket_data["movie_session"].id,
                         ticket_data["row"],
                         ticket_data["seat"]
@@ -234,8 +239,9 @@ class MovieWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
         fields = ("id", "title", "description", "duration", "genres", "actors")
+        read_only_fields = ("id",)
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict) -> Movie:
         genres_data = validated_data.pop("genres", [])
         actors_data = validated_data.pop("actors", [])
         movie = Movie.objects.create(**validated_data)
@@ -243,7 +249,7 @@ class MovieWriteSerializer(serializers.ModelSerializer):
         movie.actors.set(actors_data)
         return movie
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Movie, validated_data: dict) -> Movie:
         genres_data = validated_data.pop("genres", None)
         actors_data = validated_data.pop("actors", None)
 

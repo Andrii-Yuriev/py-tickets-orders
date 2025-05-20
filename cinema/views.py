@@ -41,27 +41,23 @@ class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = [AllowAny]
-    pagination_class = None
 
 
 class ActorViewSet(viewsets.ModelViewSet):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
     permission_classes = [AllowAny]
-    pagination_class = None
 
 
 class CinemaHallViewSet(viewsets.ModelViewSet):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
     permission_classes = [AllowAny]
-    pagination_class = None
 
 
 class MovieViewSet(viewsets.ModelViewSet):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     permission_classes = [AllowAny]
-    pagination_class = None
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -102,7 +98,6 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         "movie", "cinema_hall"
     ).prefetch_related("tickets")
     permission_classes = [AllowAny]
-    pagination_class = None
 
     def get_serializer_class(self):
         if self.action == "list":
