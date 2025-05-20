@@ -45,16 +45,6 @@ class MovieListSerializer(serializers.ModelSerializer):
         model = Movie
         fields = ("id", "title", "description", "duration", "genres", "actors")
 
-    def _genres_actors_for_write(self, validated_data):
-        genres_data = validated_data.pop("genres", None)
-        actors_data = validated_data.pop("actors", None)
-        movie = super().create(validated_data)
-        if genres_data:
-            movie.genres.set(genres_data)
-        if actors_data:
-            movie.actors.set(actors_data)
-        return movie
-
 
 class MovieRetrieveSerializer(serializers.ModelSerializer):
     genres = GenreSerializer(many=True, read_only=True)
@@ -198,10 +188,11 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                 ticket_data["seat"]
             )
             if ticket_identifier in seen_tickets:
-                message = "Ticket for session {}, row {}, seat {} is already taken.".format(
-                    ticket_data['movie_session'].id,
-                    ticket_data['row'],
-                    ticket_data['seat']
+                message = ("Ticket for session {}, "
+                           "row {}, seat {} is already taken.").format(
+                    ticket_data["movie_session"].id,
+                    ticket_data["row"],
+                    ticket_data["seat"]
                 )
                 raise serializers.ValidationError({"tickets": message})
             seen_tickets.add(ticket_identifier)
@@ -209,16 +200,17 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data: dict) -> Order:
         with transaction.atomic():
-            tickets_data = self.validate_tickets(validated_data.pop("tickets"))
-            order = Order.objects.create(user=validated_data["user"])
+            tickets_data = validated_data.pop("tickets")
+            order = Order.objects.create(**validated_data)
             for ticket_data in tickets_data:
                 try:
                     Ticket.objects.create(order=order, **ticket_data)
                 except IntegrityError:
-                    message = "Ticket for session {}, row {}, seat {} is already taken.".format(
-                        ticket_data['movie_session'].id,
-                        ticket_data['row'],
-                        ticket_data['seat']
+                    message = ("Ticket for session {}, "
+                               "row {}, seat {} is already taken.").format(
+                        ticket_data["movie_session"].id,
+                        ticket_data["row"],
+                        ticket_data["seat"]
                     )
                     raise serializers.ValidationError({"tickets": message})
             return order
